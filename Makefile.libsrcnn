@@ -42,12 +42,12 @@ $(OBJS): $(OBJ_PATH)/%.o: $(SRC_PATH)/%.cpp
 
 $(BIN_PATH)/$(LSTATIC): $(OBJS)
 	@echo "Linking $@ ..."
-	$(AR) -q $@ $^
+	@$(AR) -q $@ $^
 
 $(BIN_PATH)/$(LSHARED): $(OBJS)
 	@echo "Linking $@ ..."
-	$(CXX) -shared -Wl,-soname,$(LSHARED) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+	@$(CXX) -shared -Wl,-soname,$(LSHARED) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 $(BIN_PATH)/$(LHEAD): $(SRC_PATH)/libsrcnn.h
-	@echo "Head $@ ..."
-	$(CP) $^ $@
+	@echo "Copying header $@ ..."
+	@$(CP) $^ $@
