@@ -1,4 +1,7 @@
 bin/
 obj/
+Pictures/
+lib/
 *.o
 *.bak
+testout.png

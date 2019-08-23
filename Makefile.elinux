@@ -1,4 +1,4 @@
-# Makefiel for SRCNN git cloned mod.
+# Makefile for SRCNN git cloned mod.
 # by Raphael Kim
 
 CPP = gcc
@@ -21,6 +21,7 @@ CFLAGS += -I$(SRC_PATH)
 CFLAGS += $(OPENCV_INCS)
 
 # Static build may require static-configured openCV.
+# You can make comment -static-* flags for you dynamic build.
 LFLAGS  = 
 LFLAGS += $(OPENCV_LIBS)
 LFLAGS += -static-libgcc -static-libstdc++

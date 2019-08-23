@@ -5,13 +5,13 @@ CPP = gcc
 CXX = g++
 AR  = ar
 
-OPENCV_INCS = `pkg-config --static --cflags opencv`
-OPENCV_LIBS = `pkg-config --static --libs opencv`
+OPENCV_INCS = `pkg-config --cflags opencv`
+OPENCV_LIBS = `pkg-config --libs opencv`
 
 SRC_PATH = src
 OBJ_PATH = obj
 BIN_PATH = bin
-TARGET   = srcnn
+TARGET   = srcnn_noomp
 
 SRCS = $(wildcard $(SRC_PATH)/*.cpp)
 OBJS = $(SRCS:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
@@ -19,7 +19,6 @@ OBJS = $(SRCS:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 CFLAGS  = -mtune=native
 CFLAGS += -I$(SRC_PATH)
 CFLAGS += $(OPENCV_INCS)
-CLFAGS += -DNO_OMP
 
 # Static build may require static-configured openCV.
 LFLAGS  = 
@@ -32,7 +31,6 @@ all: prepare $(BIN_PATH)/$(TARGET)
 prepare:
 	@mkdir -p $(OBJ_PATH)
 	@mkdir -p $(BIN_PATH)
-	@echo $(SRCS)
 
 clean:
 	@rm -rf $(OBJ_PATH)/*.o
@@ -45,4 +43,3 @@ $(OBJS): $(OBJ_PATH)/%.o: $(SRC_PATH)/%.cpp
 $(BIN_PATH)/$(TARGET): $(OBJS)
 	@echo "Linking $@ ..."
 	@$(CXX) $(OBJ_PATH)/*.o $(CFLAGS) $(LFLAGS) -o $@
-

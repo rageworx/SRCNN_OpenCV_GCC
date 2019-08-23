@@ -44,12 +44,12 @@ OPENCV_LIBS += -lzlib
 SRC_PATH = src
 OBJ_PATH = obj
 BIN_PATH = bin
-TARGET   = srcnn-static
+TARGET   = srcnn-static-nonomp
 
 SRCS = $(wildcard $(SRC_PATH)/*.cpp)
 OBJS = $(SRCS:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 
-CFLAGS  = -mtune=native -fopenmp
+CFLAGS  = -mtune=native
 CFLAGS += -I$(SRC_PATH)
 CFLAGS += $(OPENCV_INCS)
 
