@@ -73,7 +73,8 @@ SRCNN:
 You can compile the C/C++ files on the command line in your POSIX shell. 
 
 ``` Shell
-make
+make -f Makefile{.your option}
 ```
+
 If the compile is successful, you will see linked binary in 'bin' directory.
 
