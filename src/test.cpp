@@ -274,11 +274,11 @@ bool savetocolorpng( Fl_RGB_Image* imgcached, const char* fpath )
 
 int main( int argc, char** argv )
 {	
-	printf( "Test for SRCNN with FLTK-1.3.4-1-ts\n" );
-	printf( "(C)2018 Raphael Kim\n\n" );
+	printf( "Test for SRCNN with FLTK-1.3.5-1-ts\n" );
+	printf( "(C)2018,2019 Raphael Kim\n\n" );
 	fflush( stdout );
 	
-	const char imgtestpath[] = "Pictures/butterfly_GT.bmp";
+	const char imgtestpath[] = "Pictures/butterfly.png";
 	
 	Fl_RGB_Image* imgTest = NULL;
 	
