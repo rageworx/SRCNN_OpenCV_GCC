@@ -56,6 +56,7 @@ CFLAGS += $(OPENCV_INCS)
 LFLAGS  = -static
 LFLAGS += $(OPENCV_LIBS)
 LFLAGS += -s -ffast-math -Ofast -fopenmp -fomit-frame-pointer
+#LFLAGS += -g -DDEBUG
 
 all: prepare $(BIN_PATH)/$(TARGET)
 

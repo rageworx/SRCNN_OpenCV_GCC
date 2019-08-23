@@ -8,6 +8,10 @@
  * Descriptin ..
  *                 This source code modified version from Origianl code of Wang
  *                Shu's. All license following from origin.
+ * Update,
+ *    2019-08-23:
+ *                 A confidence russian guy advanced two convolutions in once,
+ *                See Convolution99x11().
 *******************************************************************************/
 #ifndef EXPORTLIBSRCNN
 
@@ -39,6 +43,7 @@ using namespace cv;
 static float    image_multiply  = 2.0f;
 static unsigned image_width     = 0;
 static unsigned image_height    = 0;
+static float    cnn_v           = 0.5f;
 static bool     opt_verbose     = true;
 static bool     opt_debug       = false;
 static bool     opt_help        = false;
@@ -51,7 +56,7 @@ static string   file_dst;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define DEF_STR_VERSION     "0.1.4.16"
+#define DEF_STR_VERSION     "0.1.5.21"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,9 +66,16 @@ void Convolution99( Mat& src, Mat& dst, \
 
 void Convolution11( vector<Mat>& src, Mat& dst, \
                     const float kernel[CONV1_FILTERS], float bias);
+                    
+void Convolution99x11( Mat& src, vector<Mat>& dst, \
+                       const ConvKernel64_99 kernel99, 
+                       const ConvKernel1 bias99, \
+                       const CvnvKernel21 kernel11, 
+                       const ConvKernel2 bias11 );
 
 void Convolution55( vector<Mat>& src, Mat& dst, \
                     const float kernel[32][5][5], float bias);
+                    
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -77,9 +89,9 @@ static int IntTrim(int a, int b, int c)
  * FuncName : Convolution99
  * Function : Complete one cell in the first Convolutional Layer
  * Parameter    : src - the original input image
- *        dst - the output image
- *        kernel - the convolutional kernel
- *        bias - the cell bias
+ *                dst - the output image
+ *                kernel - the convolutional kernel
+ *                bias - the cell bias
  * Output   : <void>
 ***/
 void Convolution99(Mat& src, Mat& dst, const float kernel[9][9], float bias)
@@ -130,9 +142,9 @@ void Convolution99(Mat& src, Mat& dst, const float kernel[9][9], float bias)
  * FuncName : Convolution11
  * Function : Complete one cell in the second Convolutional Layer
  * Parameter    : src - the first layer data
- *        dst - the output data
- *        kernel - the convolutional kernel
- *        bias - the cell bias
+ *                dst - the output data
+ *                kernel - the convolutional kernel
+ *                bias - the cell bias
  * Output   : <void>
 ***/
 void Convolution11(vector<Mat>& src, Mat& dst, const float kernel[CONV1_FILTERS], float bias)
@@ -164,12 +176,87 @@ void Convolution11(vector<Mat>& src, Mat& dst, const float kernel[CONV1_FILTERS]
 }
 
 /***
+ * FuncName : Convolution99x11
+ * Function : Complete cells in first and second Convolutional Layers.
+ * Parameter    : src - the first layer data
+ *                dst - the output data
+ *                kernel99, bias99, kernel11 and 
+ *                bias11 matrix - each reference precalculated tables
+ * Output   : <void>
+***/
+void Convolution99x11( Mat& src, vector<Mat>& dst,
+                       const ConvKernel64_99 kernel99, const ConvKernel1 bias99,
+                       const CvnvKernel21 kernel11, const ConvKernel2 bias11 )
+{
+    int width, height, row, col, i, j, k;
+    float temp[CONV1_FILTERS];
+    float result;
+    height = src.rows;
+    width = src.cols;
+    int rowf[height + 8], colf[width + 8];
+
+    /* Expand the src image */
+    for (row = 0; row < height + 8; row++)
+    {
+        rowf[row] = IntTrim(0, height - 1, row - 4);
+    }
+    for (col = 0; col < width + 8; col++)
+    {
+        colf[col] = IntTrim(0, width - 1, col - 4);
+    }
+
+    /* Complete the Convolution Step */
+    for (row = 0; row < height; row++)
+    {
+        for (col = 0; col < width; col++)
+        {
+            for (k = 0; k < CONV1_FILTERS; k++)
+            {
+                /* Convolution */
+                temp[k] = 0.0;
+
+                for (i = 0; i < 9; i++)
+                {
+                    for (j = 0; j < 9; j++)
+                    {
+                        temp[k] += kernel99[k][i][j] 
+                                   * src.at<unsigned char>(rowf[row + i], colf[col + j]);
+                    }
+                }
+
+                temp[k] += bias99[k];
+
+                /* Threshold */
+                temp[k] = (temp[k] < 0) ? 0 : temp[k];
+            }
+
+            /* Process with each pixel */
+            for (k = 0; k < CONV2_FILTERS; k++)
+            {
+                result = 0.0;
+
+                for (i = 0; i < CONV1_FILTERS; i++)
+                {
+                    result += temp[i] * kernel11[k][i];
+                }
+                result += bias11[k];
+
+                /* Threshold */
+                result = (result < 0) ? 0 : result;
+
+                dst[k].at<float>(row, col) = result;
+            }
+        }
+    }   
+}
+
+/***
  * FuncName : Convolution55
  * Function : Complete the cell in the third Convolutional Layer
- * Parameter    : src - the second layer data
- *        dst - the output image
- *        kernel - the convolutional kernel
- *        bias - the cell bias
+ * Parameter : src - the second layer data
+ *             dst - the output image
+ *             kernel - the convolutional kernel
+ *             bias - the cell bias
  * Output   : <void>
 ***/
 void Convolution55(vector<Mat>& src, Mat& dst, const float kernel[32][5][5], float bias)
@@ -193,7 +280,6 @@ void Convolution55(vector<Mat>& src, Mat& dst, const float kernel[32][5][5], flo
     }
 
     /* Complete the Convolution Step */
-    //#pragma omp parallel for
     for (row = 0; row < height; row++)
     {
         for (col = 0; col < width; col++)
@@ -224,7 +310,34 @@ void Convolution55(vector<Mat>& src, Mat& dst, const float kernel[32][5][5], flo
         }
     }
 
-    //return;
+}
+
+void ConvolutionA( Mat& src, Mat& dst, float part )
+{
+    int width, height, row, col;
+    float cnn, cub;
+    height = src.rows;
+    width = src.cols;
+
+    #pragma omp parallel for
+    for (row = 0; row < height; row++)
+    {
+        for (col = 0; col < width; col++)
+        {
+            /* Process with each pixel */
+            cnn = src.at<unsigned char>(row, col);
+            cub = dst.at<unsigned char>(row, col);
+            cnn *= part;
+            cnn += (1.0 - part) * cub;
+
+            /* Threshold */
+            cnn = IntTrim(0, 255, (int)(cnn + 0.5));
+
+            dst.at<unsigned char>(row, col) = (unsigned char)cnn;
+        }
+    }
+
+    return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,6 +381,19 @@ bool parseArgs( int argc, char** argv )
                     if ( tmpfv > 0.f )
                     {
                         image_multiply = tmpfv;
+                    }
+                }
+            }
+            else
+            if ( strtmp.find( "--cnn=" ) == 0 )
+            {
+                string strval = strtmp.substr( 8 );
+                if ( strval.size() > 0 )
+                {
+                    float tmpfv = atof( strval.c_str() );
+                    if ( ( tmpfv > 0.f ) && ( tmpfv <= 1.0f ) )
+                    {
+                        cnn_v = tmpfv;
                     }
                 }
             }
@@ -339,11 +465,13 @@ void printTitle()
 void printHelp()
 {
     printf( "\n" );
-    printf( "    usage : %s (options) [source file name] ([output file name])\n", file_me.c_str() );
+    printf( "    usage : %s (options) [source file name] ([output file name])\n", 
+            file_me.c_str() );
     printf( "\n" );
     printf( "    _options_:\n" );
     printf( "\n" );
     printf( "        --scale=( ratio: 0.1 to .. ) : scaling by ratio.\n" );
+    printf( "        --cnn=( 0.1 to 1.0 )         : CNN\n" );
     printf( "        --noverbose                  : turns off all verbose\n" );
     printf( "        --help                       : this help\n" );
     printf( "\n" );
@@ -494,25 +622,24 @@ void* pthreadcall( void* p )
 
     int cnt = 0;
 
-    /******************* The First Layer *******************/
+    /*************** The First + Second Layers ***************/
 
     if ( opt_verbose == true )
     {
-        printf( "- Processing convolutional layer I ... " );
+        printf( "- Processing convolutional layer I + II ... " );
         fflush( stdout );
     }
 
-    vector<Mat> pImgConv1(CONV1_FILTERS);
-    #pragma omp parallel for
-    for ( unsigned cnt=0; cnt<CONV1_FILTERS; cnt++)
+    vector<Mat> pImgConv2(CONV2_FILTERS);
+        
+    for ( unsigned cnt=0; cnt<CONV2_FILTERS; cnt++)
     {
-        pImgConv1[cnt].create( pImg[0].size(), CV_32F );
-
-        Convolution99( pImg[0],
-                       pImgConv1[cnt],
-                       weights_conv1_data[cnt],
-                       biases_conv1[cnt] );
+        pImgConv2[cnt].create( pImg[0].size(), CV_32F );
     }
+
+    Convolution99x11( pImg[0], pImgConv2, \
+                      weights_conv1_data, biases_conv1, 
+                      weights_conv2_data, biases_conv2    );
 
     if ( opt_verbose == true )
     {
@@ -520,6 +647,7 @@ void* pthreadcall( void* p )
         fflush( stdout );
     }
 
+#if 0
     /******************* The Second Layer *******************/
 
     if ( opt_verbose == true )
@@ -544,6 +672,7 @@ void* pthreadcall( void* p )
         printf( "completed.\n" );
         fflush( stdout );
     }
+#endif 
 
     /******************* The Third Layer *******************/
 
@@ -563,6 +692,10 @@ void* pthreadcall( void* p )
         printf( "- Merging images : " );
         fflush( stdout );
     }
+    
+    // a russian guy's CNN --
+    float partCNN = (cnn_v < 0.0) ? 0 : ((cnn_v > 1.0) ? 1.0 : cnn_v);
+    ConvolutionA( pImgConv3, pImg[0], partCNN );
 
     /* Merge the Y-Cr-Cb Channel into an image */
     Mat pImgYCrCbOut;
