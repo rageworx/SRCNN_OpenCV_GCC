@@ -1,4 +1,4 @@
-# Makefiel for SRCNN git cloned mod.
+# Makefile for SRCNN git cloned mod.
 # by Raphael Kim
 
 CPP = gcc
