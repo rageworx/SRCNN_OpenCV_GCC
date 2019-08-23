@@ -2,12 +2,16 @@
  * SRCNN: Super-Resolution with deep Convolutional Neural Networks
  * ----------------------------------------------------------------------------
  * Current Author : Raphael Kim ( rageworx@gmail.com )
- * Latest update  : 2018-08-10
+ * Latest update  : 2019-08-23
  * Pre-Author     : Wang Shu
  * Origin-Date    @ Sun 13 Sep, 2015
  * Descriptin ..
  *                 This source code modified version from Origianl code of Wang
  *                Shu's. All license following from origin.
+ * Fetch note ..
+ *                 A russian guy 'zvezdochiot' fetched bugs from origin repo of
+ *                Wang Shut's in thanksfully. It was fetched some final bug of
+ *                image merging sequence.
 *******************************************************************************/
 #ifndef EXPORTLIBSRCNN
 
@@ -51,7 +55,7 @@ static string   file_dst;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define DEF_STR_VERSION     "0.1.4.16"
+#define DEF_STR_VERSION     "0.1.4.18"
 
 ////////////////////////////////////////////////////////////////////////////////
 

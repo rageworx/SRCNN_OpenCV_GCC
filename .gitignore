@@ -1,5 +1,6 @@
 bin/
 obj/
 Pictures/
+lib/
 *.o
 *.bak
